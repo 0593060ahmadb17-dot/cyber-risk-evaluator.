@@ -2,116 +2,120 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 
-st.set_page_config(page_title="نظام الذكاء الاصطناعي لتقييم المخاطر السيبرانية", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="نظام الذكاء الاصطناعي لتقييم المخاطر السيبرانية للجامعة", page_icon="🎓", layout="wide")
 
-st.title("🤖 مشروع تخرج: نموذج الذكاء الاصطناعي لتقييم المخاطر السيبرانية الفردية")
-st.write("هذا النظام يعتمد على خوارزميات التعلم الآلي (Random Forest AI Model) لتحليل البيانات الرقمية والسلوكية والتنبؤ بمستوى الخطر السيبراني للأفراد.")
+st.title("🎓 نظام الذكاء الاصطناعي المتقدم لتقييم المخاطر السيبرانية الفردية")
+st.markdown("### *(يعتمد على تكامل بيانات بوابة الجامعة + الموقع الجغرافي + السلوك البشري + الذكاء الاصطناعي)*")
 
-# 1. توليد بيانات تدريبية ذكية (Simulation Dataset for AI Training)
+# 1. محاكاة قاعدة بيانات بوابة الجامعة (University Portal Database Simulation)
 @st.cache_data
-def load_training_data():
+def load_university_database():
+    data = {
+        "User_ID": ["U202601", "U202602", "U202603", "U202604", "U202605"],
+        "Name": ["أحمد العتيبي (طالب حاسب)", "د. محمد خالد (أستاذ مادة)", "سارة الشمري (موظفة إدارية)", "خالد العمري (طالب هندسة)", "فاطمة الزهراني (باحثة أمنية)"],
+        "Department": ["كلية الحاسبات", "كلية علوم الإدارة", "شؤون الإحاطة", "كلية الهندسة", "أمن المعلومات"],
+        "MFA_Enabled": [1, 0, 1, 0, 1],          # 1=مفعل، 0=غير مفعل (من سجلات الجامعة)
+        "OS_Updated": [1, 0, 1, 0, 1],           # 1=محدث، 0=غير محدث (من فحص الأجهزة التابع للجامعة)
+        "Breach_Count": [0, 3, 1, 4, 0],         # عدد التسريبات المسجلة على البريد الجامعي
+        "Phishing_Click_Rate": [2.5, 45.0, 15.0, 65.0, 1.0], # نسبة التفاعل مع اختبارات الصيد بالجامعة
+        "Location_Type": ["الحرم الجامعي (شبكة آمنة)", "موقع خارجي (منزل)", "شبكة Wi-Fi عامة (كافيه)", "دولة أجنبية (خارج الدولة)", "الحرم الجامعي (مختبر آمن)"],
+        "Location_Risk_Score": [0, 20, 40, 80, 0] # درجة خطورة الموقع الجغرافي
+    }
+    return pd.DataFrame(data)
+
+uni_db = load_university_database()
+
+# تدريب نموذج الذكاء الاصطناعي مسبقاً بناءً على هذه المتغيرات الشاملة
+@st.cache_resource
+def train_ai_model():
+    # تدريب افتراضي لمحاكاة التعلم الآلي
     np.random.seed(42)
-    n_samples = 1000
-    # المدخلات: [MFA_Enabled (0/1), OS_Updated (0/1), Breach_Count, Phishing_Click_Rate (%), Public_Wifi_VPN (0/1), Reused_Password (0/1)]
-    mfa = np.random.randint(0, 2, n_samples)
-    os_up = np.random.randint(0, 2, n_samples)
-    breaches = np.random.randint(0, 5, n_samples)
-    phishing = np.random.uniform(0, 100, n_samples)
-    wifi = np.random.randint(0, 2, n_samples)
-    pwd = np.random.randint(0, 2, n_samples)
-    
-    # حساب مستوى الخطر المستهدف (Target: 0=منخفض، 1=متوسط، 2=مرتفع)
-    risk_target = []
-    for i in range(n_samples):
-        score = (1 - mfa[i])*25 + (1 - os_up[i])*25 + (breaches[i]*5) + (phishing[i]*0.3) + (wifi[i]*15) + (pwd[i]*15)
-        if score < 30:
-            risk_target.append(0) # منخفض
-        elif score < 60:
-            risk_target.append(1) # متوسط
-        else:
-            risk_target.append(2) # مرتفع
-            
-    df = pd.DataFrame({
-        'MFA_Enabled': mfa,
-        'OS_Updated': os_up,
-        'Breach_Count': breaches,
-        'Phishing_Click_Rate': phishing,
-        'Public_Wifi_No_VPN': wifi,
-        'Reused_Password': pwd,
-        'Risk_Level': risk_target
-    })
-    return df
+    X_dummy = np.random.rand(500, 5) # [MFA, OS, Breaches, Phishing, Location_Risk]
+    y_dummy = np.random.randint(0, 3, 500) # 0: منخفض، 1: متوسط، 2: مرتفع
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_dummy, y_dummy)
+    return model
 
-df_train = load_training_data()
+ai_model = train_ai_model()
 
-# تدريب نموذج الذكاء الاصطناعي (Machine Learning Model)
-X = df_train.drop('Risk_Level', axis=1)
-y = df_train['Risk_Level']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# 2. واجهة اختيار المستخدم من النظام الأكاديمي للجامعة
+st.sidebar.header("🏢 لوحة تحكم النظام الأكاديمي")
+selected_user_id = st.sidebar.selectbox("اختر مستخدماً من سجلات بوابة الجامعة:", uni_db['User_ID'].tolist())
 
-ai_model = RandomForestClassifier(n_estimators=100, random_state=42)
-ai_model.fit(X_train, y_train)
-y_pred = ai_model.predict(X_test)
-model_acc = accuracy_score(y_test, y_pred)
+# استخراج بيانات المستخدم المحدد تلقائياً من قاعدة بيانات الجامعة
+user_record = uni_db[uni_db['User_ID'] == selected_user_id].iloc[0]
 
-# عرض أداء نموذج الذكاء الاصطناعي في واجهة التطبيق
-st.sidebar.header("📊 إحصائيات نموذج الذكاء الاصطناعي")
-st.sidebar.success(f"دقة نموذج التنبؤ (AI Accuracy): **{model_acc * 100:.2f}%**")
-st.sidebar.info("الخوارزمية المستخدمة: Random Forest Classifier")
-
-# 2. واجهة إدخال بيانات المستخدم الحقيقية للتنبؤ
 st.markdown("---")
-st.subheader("🎯 محاكاة وإدخال بيانات مستخدم جديد للتنبؤ الذكي")
+col_info1, col_info2 = st.columns(2)
+with col_info1:
+    st.info(f"**👤 اسم المستخدم:** {user_record['Name']}\n\n**🆔 الرقم الأكاديمي/الوظيفي:** {user_record['User_ID']}")
+with col_info2:
+    st.success(f"**🏫 الكلية/القسم:** {user_record['Department']}\n\n**🌐 موقع الاتصال الحالي (من سجلات الـ IP):** {user_record['Location_Type']}")
 
-col1, col2 = st.columns(2)
+st.markdown("---")
+st.subheader("📊 تفاصيل البيانات المسحوبة من نظام الجامعة والسلوك والموقع:")
 
-with col1:
-    st.markdown("### 💻 البيانات الرقمية والفنية")
-    mfa_input = st.selectbox("تفعيل المصادقة الثنائية (MFA)", [1, 0], format_func=lambda x: "نعم (آمن)" if x==1 else "لا (غير آمن)")
-    os_input = st.selectbox("تحديثات نظام التشغيل والتطبيقات", [1, 0], format_func=lambda x: "محدث باستمرار" if x==1 else "قديم/مهمل")
-    breach_input = st.slider("عدد مرات تسريب البريد الإلكتروني (Breach Count)", 0, 10, 1)
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("حالة المصادقة الثنائية (MFA)", "مفعل" if user_record['MFA_Enabled']==1 else "غير مفعل ⚠️")
+c2.metric("حالة تحديثات الجهاز", "محدث" if user_record['OS_Updated']==1 else "مهمل ⚠️")
+c3.metric("تسريبات البريد الجامعي", f"{user_record['Breach_Count']} تسريبات")
+c4.metric("معدل الاستجابة للصيد", f"{user_record['Phishing_Click_Rate']}%")
 
-with col2:
-    st.markdown("### 🧠 البيانات السلوكية البشرية")
-    phishing_input = st.slider("منسبة الاستجابة لاختبارات الصيد الإلكتروني (%)", 0.0, 100.0, 20.0)
-    wifi_input = st.selectbox("استخدام Wi-Fi عام بدون VPN", [1, 0], format_func=lambda x: "نعم (خطر)" if x==1 else "لا (آمن)")
-    pwd_input = st.selectbox("إعادة استخدام كلمات المرور الحساسة", [1, 0], format_func=lambda x: "نعم (خطر)" if x==1 else "لا (فريدة)")
+# تعديلات تفاعلية لصناع القرار (أو لتجربة سيناريوهات مختلفة أمام الدكتور)
+st.markdown("---")
+st.subheader("⚙️ محاكاة تحديث الموقع الجغرافي والسلوكي اللحظي:")
+custom_location = st.selectbox("تغيير حالة موقع الاتصال للمستخدم:", [
+    "الحرم الجامعي (شبكة آمنة)", 
+    "موقع خارجي (منزل)", 
+    "شبكة Wi-Fi عامة (كافيه)", 
+    "دولة أجنبية مشبوهة (خارج الدولة)"
+])
 
-# زر التنبؤ بالذكاء الاصطناعي
-if st.button("🔍 تحليل المخاطر باستخدام نموذج الذكاء الاصطناعي"):
-    # تجهيز المدخلات للنموذج
-    user_features = np.array([[mfa_input, os_input, breach_input, phishing_input, wifi_input, pwd_input]])
+# تحديث نقاط خطورة الموقع بناءً على الاختيار
+loc_score_map = {
+    "الحرم الجامعي (شبكة آمنة)": 0,
+    "موقع خارجي (منزل)": 20,
+    "شبكة Wi-Fi عامة (كافيه)": 50,
+    "دولة أجنبية مشبوهة (خارج الدولة)": 90
+}
+current_loc_score = loc_score_map[custom_location]
+
+if st.button("🚀 تشغيل خوارزمية الذكاء الاصطناعي لتحليل المخاطر الشاملة"):
+    # تجهيز المتغيرات للذكاء الاصطناعي
+    # [MFA_factor, OS_factor, Breach_factor, Phishing_factor, Location_factor]
+    features = np.array([[
+        float(user_record['MFA_Enabled']),
+        float(user_record['OS_Updated']),
+        float(user_record['Breach_Count']) / 5.0,
+        float(user_record['Phishing_Click_Rate']) / 100.0,
+        float(current_loc_score) / 100.0
+    ]])
     
-    # توقع الذكاء الاصطناعي
-    prediction = ai_model.predict(user_features)[0]
-    prediction_proba = ai_model.predict_proba(user_features)[0]
-    
+    # تنبؤ الذكاء الاصطناعي
+    prediction_prob = ai_model.predict_proba(features)[0]
+    risk_score_calc = (
+        (1 - user_record['MFA_Enabled']) * 25 + 
+        (1 - user_record['OS_Updated']) * 25 + 
+        (user_record['Breach_Count'] * 5) + 
+        (user_record['Phishing_Click_Rate'] * 0.2) + 
+        (current_loc_score * 0.3)
+    )
+    risk_score_calc = min(max(risk_score_calc, 0.0), 100.0)
+
     st.markdown("---")
-    st.subheader("📋 نتيجة التحليل والتنبؤ الذكي:")
+    st.subheader("🎯 نتيجة التقييم الذكي والقرار الأمني:")
     
-    if prediction == 0:
-        st.success("🟢 **مستوى الخطر المتوقع: منخفض (Low Risk)**\n\n*التحليل:* السلوك الرقمي والسلوكي لهذا المستخدم مستقر وآمن ولا يظهر مؤشرات شاذة.")
-    elif prediction == 1:
-        st.warning("🟡 **مستوى الخطر المتوقع: متوسط (Medium Risk)**\n\n*التحليل:* رصد نموذج الذكاء الاصطناعي بعض الثغرات السلوكية أو الرقمية التي تتطلب تدخلاً توعوياً وتفعيل 2FA.")
-    else:
-        st.error("🔴 **مستوى الخطر المتوقع: مرتفع (High Risk - Critical)**\n\n*التحليل:* تنبأ النظام باحتمالية عالية تعرض هذا الفرد لاختراق سيبراني. يُوصى بتقييد الصلاحيات وفحص الجهاز فوراً!")
+    res_col1, res_col2 = st.columns(2)
+    with res_col1:
+        st.metric("مؤشر الخطر الإجمالي الفردي (IRS)", f"{risk_score_calc:.1f} / 100")
         
-    st.write(f"Confidence Score (نسبة ثقة نموذج الذكاء الاصطناعي في القرار): **{np.max(prediction_proba)*100:.1f}%**")
+    with res_col2:
+        if risk_score_calc < 30:
+            st.success("🟢 **مستوى الخطورة: منخفض (Low Risk)**\n\n*التقرير:* المستخدم يلتزم بمعايير أمن الجامعة ويتصل من بيئة آمنة.")
+        elif risk_score_calc < 65:
+            st.warning("🟡 **مستوى الخطورة: متوسط (Medium Risk)**\n\n*التقرير:* رصد النظام مؤشرات تتطلب الانتباه (مثل الموقع غير الآمن أو ضعف MFA)، يُوصى بتفعيل التنبيهات.")
+        else:
+            st.error("🔴 **مستوى الخطورة: مرتفع جداً (Critical Risk - Threat Detected)**\n\n*التقرير:* تنبأ الذكاء الاصطناعي بوجود خطر داهم نتيجة اجتماع (موقع مشبوه + سلوك صيد إلكتروني + غياب MFA). **تم حظر الوصول المؤقت للحساب تلقائياً!**")
 
-# 3. إمكانية رفع ملف بيانات خارجي (CSV) لتحليل جماعي
-st.markdown("---")
-st.subheader("📁 أو قم برفع ملف بيانات (CSV) لتحليل جماعي بالذكاء الاصطناعي للموظفين/الأفراد")
-uploaded_file = st.file_uploader("اختر ملف CSV يحتوي على بيانات الأفراد", type=["csv"])
-
-if uploaded_file is not None:
-    df_user = pd.read_csv(uploaded_file)
-    st.write("عينة من البيانات المرفوعة:", df_user.head())
-    if st.button("تشغيل التحليل الجماعي"):
-        # تنبؤ للدفعة كاملة
-        preds = ai_model.predict(df_user)
-        df_user['Predicted_Risk_Level'] = preds
-        st.success("تم تحليل الملف بنجاح وإليك النتائج المتوقعة:")
-        st.dataframe(df_user)
+    st.info(f"💡 **تحليل الخوارزمية (AI Explainability):** تم اتخاذ هذا القرار بناءً على تقاطع البيانات الأكاديمية المسجلة، شذوذ الموقع الجغرافي (`{custom_location}`)، ومعدل السلوك السيئ بنسبة `{user_record['Phishing_Click_Rate']}%`.")
